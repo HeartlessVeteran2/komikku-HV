@@ -41,6 +41,7 @@ import tachiyomi.data.category.CategoryRepositoryImpl
 import tachiyomi.data.chapter.ChapterRepositoryImpl
 import tachiyomi.data.history.HistoryRepositoryImpl
 import tachiyomi.data.manga.MangaRepositoryImpl
+import tachiyomi.data.readercomment.ReaderCommentRepositoryImpl
 import tachiyomi.data.release.ReleaseServiceImpl
 import tachiyomi.data.source.SourceRepositoryImpl
 import tachiyomi.data.source.StubSourceRepositoryImpl
@@ -84,6 +85,11 @@ import tachiyomi.domain.manga.interactor.ResetViewerFlags
 import tachiyomi.domain.manga.interactor.SetMangaChapterFlags
 import tachiyomi.domain.manga.interactor.UpdateMangaNotes
 import tachiyomi.domain.manga.repository.MangaRepository
+import tachiyomi.domain.readercomment.interactor.DeleteReaderComment
+import tachiyomi.domain.readercomment.interactor.GetReaderCommentsByChapterId
+import tachiyomi.domain.readercomment.interactor.GetReaderCommentsByMangaId
+import tachiyomi.domain.readercomment.interactor.InsertReaderComment
+import tachiyomi.domain.readercomment.repository.ReaderCommentRepository
 import tachiyomi.domain.release.interactor.GetApplicationRelease
 import tachiyomi.domain.release.service.ReleaseService
 import tachiyomi.domain.source.interactor.GetRemoteManga
@@ -170,6 +176,14 @@ class DomainModule : InjektModule {
         addFactory { SyncChaptersWithSource(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
         addFactory { GetAvailableScanlators(get()) }
         addFactory { FilterChaptersForDownload(get(), get(), get(), get()) }
+
+        // KMK -->
+        addSingletonFactory<ReaderCommentRepository> { ReaderCommentRepositoryImpl(get()) }
+        addFactory { GetReaderCommentsByChapterId(get()) }
+        addFactory { GetReaderCommentsByMangaId(get()) }
+        addFactory { InsertReaderComment(get()) }
+        addFactory { DeleteReaderComment(get()) }
+        // KMK <--
 
         addSingletonFactory<HistoryRepository> { HistoryRepositoryImpl(get()) }
         addFactory { GetHistory(get()) }

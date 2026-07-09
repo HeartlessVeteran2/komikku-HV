@@ -69,8 +69,10 @@ import eu.kanade.domain.ui.UiPreferences
 import eu.kanade.presentation.reader.ChapterListDialog
 import eu.kanade.presentation.reader.DisplayRefreshHost
 import eu.kanade.presentation.reader.OrientationSelectDialog
+import eu.kanade.presentation.reader.ReaderCommentsSheet
 import eu.kanade.presentation.reader.ReaderContentOverlay
 import eu.kanade.presentation.reader.ReaderPageActionsDialog
+import eu.kanade.presentation.reader.ReaderPageGalleryDialog
 import eu.kanade.presentation.reader.ReaderPageIndicator
 import eu.kanade.presentation.reader.ReadingModeSelectDialog
 import eu.kanade.presentation.reader.appbars.NavBarType
@@ -81,6 +83,7 @@ import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.data.coil.TachiyomiImageDecoder
 import eu.kanade.tachiyomi.data.connections.discord.DiscordRPCService
 import eu.kanade.tachiyomi.data.connections.discord.ReaderData
+import eu.kanade.tachiyomi.data.download.DownloadManager
 import eu.kanade.tachiyomi.data.notification.NotificationReceiver
 import eu.kanade.tachiyomi.data.notification.Notifications
 import eu.kanade.tachiyomi.databinding.ReaderActivityBinding
@@ -100,6 +103,7 @@ import eu.kanade.tachiyomi.ui.reader.setting.ReaderPreferences
 import eu.kanade.tachiyomi.ui.reader.setting.ReaderSettingsScreenModel
 import eu.kanade.tachiyomi.ui.reader.setting.ReadingMode
 import eu.kanade.tachiyomi.ui.reader.viewer.ReaderProgressIndicator
+import eu.kanade.tachiyomi.ui.reader.viewer.ReaderThumbnailProvider
 import eu.kanade.tachiyomi.ui.reader.viewer.pager.PagerConfig
 import eu.kanade.tachiyomi.ui.reader.viewer.pager.PagerViewer
 import eu.kanade.tachiyomi.ui.reader.viewer.pager.VerticalPagerViewer
@@ -167,6 +171,10 @@ class ReaderActivity : BaseActivity() {
 
     private val readerPreferences = Injekt.get<ReaderPreferences>()
     private val preferences = Injekt.get<BasePreferences>()
+
+    // KMK -->
+    private val readerThumbnailProvider = Injekt.get<ReaderThumbnailProvider>()
+    // KMK <--
 
     // KMK -->
     val themeCoverBased = Injekt.get<UiPreferences>().themeCoverBased().get()
@@ -479,6 +487,46 @@ class ReaderActivity : BaseActivity() {
                     )
                 }
 
+                // KMK -->
+                ReaderViewModel.Dialog.Gallery -> {
+                    val galleryMangaId = state.manga?.id
+                    val galleryChapterId = state.currentChapter?.chapter?.id
+                    if (galleryMangaId != null && galleryChapterId != null) {
+                        ReaderPageGalleryDialog(
+                            pages = state.currentChapter?.pages.orEmpty(),
+                            mangaId = galleryMangaId,
+                            chapterId = galleryChapterId,
+                            currentPageIndex = state.currentPage - 1,
+                            onPageSelected = ::moveToPageIndex,
+                            thumbnailProvider = readerThumbnailProvider,
+                            onDismissRequest = onDismissRequest,
+                        )
+                    }
+                }
+
+                ReaderViewModel.Dialog.Comments -> {
+                    val commentsChapterId = state.currentChapter?.chapter?.id
+                    val commentsMangaId = state.manga?.id
+                    if (commentsChapterId != null && commentsMangaId != null) {
+                        val chapterComments by remember(commentsChapterId) {
+                            viewModel.chapterCommentsFlow(commentsChapterId)
+                        }.collectAsState(initial = emptyList())
+                        val mangaComments by remember(commentsMangaId) {
+                            viewModel.mangaCommentsFlow(commentsMangaId)
+                        }.collectAsState(initial = emptyList())
+
+                        ReaderCommentsSheet(
+                            chapterId = commentsChapterId,
+                            onDismissRequest = onDismissRequest,
+                            chapterComments = chapterComments,
+                            mangaComments = mangaComments,
+                            onAddComment = viewModel::addComment,
+                            onDeleteComment = viewModel::deleteComment,
+                        )
+                    }
+                }
+                // KMK <--
+
                 ReaderViewModel.Dialog.AutoScrollHelp -> AlertDialog(
                     onDismissRequest = onDismissRequest,
                     confirmButton = {
@@ -683,6 +731,15 @@ class ReaderActivity : BaseActivity() {
         }
         // SY <--
 
+        // KMK -->
+        val downloadManager: DownloadManager = remember { Injekt.get() }
+        val downloadQueueState by downloadManager.queueState.collectAsState()
+        val currentChapterDownloaded = remember(state.currentChapter, state.currentPage, downloadQueueState) {
+            viewModel.isCurrentChapterDownloaded()
+        }
+        val showPageThumbnailStrip by readerPreferences.showPageThumbnailStrip().collectAsState()
+        // KMK <--
+
         ReaderAppBars(
             visible = state.menuVisible,
 
@@ -745,6 +802,17 @@ class ReaderActivity : BaseActivity() {
             dualPageSplitEnabled = dualPageSplitPaged,
             doublePages = state.doublePages,
             onClickChapterList = viewModel::openChapterListDialog,
+            // KMK -->
+            currentChapterDownloaded = currentChapterDownloaded,
+            onClickDownload = viewModel::downloadCurrentChapter,
+            onClickPageGallery = viewModel::openGalleryDialog,
+            onClickComments = viewModel::openCommentsDialog,
+            showPageThumbnailStrip = showPageThumbnailStrip,
+            pages = state.currentChapter?.pages.orEmpty(),
+            thumbnailMangaId = state.manga?.id,
+            thumbnailChapterId = state.currentChapter?.chapter?.id,
+            thumbnailProvider = readerThumbnailProvider,
+            // KMK <--
             onClickPageLayout = {
                 if (readerPreferences.pageLayout().get() == PagerConfig.PageLayout.AUTOMATIC) {
                     (viewModel.state.value.viewer as? PagerViewer)?.config?.let { config ->

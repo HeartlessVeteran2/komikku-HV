@@ -3,8 +3,11 @@ package eu.kanade.presentation.reader.appbars
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Comment
+import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Explore
 import androidx.compose.material.icons.outlined.FormatListNumbered
+import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Share
@@ -22,6 +25,7 @@ import eu.kanade.tachiyomi.ui.reader.setting.ReaderOrientation
 import eu.kanade.tachiyomi.ui.reader.setting.ReadingMode
 import kotlinx.collections.immutable.ImmutableSet
 import tachiyomi.i18n.MR
+import tachiyomi.i18n.kmk.KMR
 import tachiyomi.i18n.sy.SYMR
 import tachiyomi.presentation.core.i18n.stringResource
 
@@ -48,6 +52,12 @@ fun ReaderBottomBar(
     onClickPageLayout: () -> Unit,
     onClickShiftPage: () -> Unit,
     // SY <--
+    // KMK -->
+    currentChapterDownloaded: Boolean,
+    onClickDownload: (() -> Unit)?,
+    onClickPageGallery: () -> Unit,
+    onClickComments: () -> Unit,
+    // KMK <--
     modifier: Modifier = Modifier,
 ) {
     // KMK -->
@@ -71,6 +81,38 @@ fun ReaderBottomBar(
                 )
             }
         }
+
+        // KMK -->
+        if (ReaderBottomButton.Download.isIn(enabledButtons) && onClickDownload != null && !currentChapterDownloaded) {
+            IconButton(onClick = onClickDownload) {
+                Icon(
+                    imageVector = Icons.Outlined.Download,
+                    contentDescription = stringResource(MR.strings.action_download),
+                    tint = iconColor,
+                )
+            }
+        }
+
+        if (ReaderBottomButton.PageGallery.isIn(enabledButtons)) {
+            IconButton(onClick = onClickPageGallery) {
+                Icon(
+                    imageVector = Icons.Outlined.GridView,
+                    contentDescription = stringResource(KMR.strings.action_page_gallery),
+                    tint = iconColor,
+                )
+            }
+        }
+
+        if (ReaderBottomButton.Comments.isIn(enabledButtons)) {
+            IconButton(onClick = onClickComments) {
+                Icon(
+                    imageVector = Icons.Outlined.Comment,
+                    contentDescription = stringResource(KMR.strings.action_reader_comments),
+                    tint = iconColor,
+                )
+            }
+        }
+        // KMK <--
 
         if (ReaderBottomButton.WebView.isIn(enabledButtons) && onClickWebView != null) {
             IconButton(onClick = onClickWebView) {

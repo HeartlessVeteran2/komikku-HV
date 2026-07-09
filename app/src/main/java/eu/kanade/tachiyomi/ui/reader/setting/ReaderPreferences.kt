@@ -211,6 +211,10 @@ class ReaderPreferences(
     fun archiveReaderMode() = preferenceStore.getInt("archive_reader_mode", ArchiveReaderMode.LOAD_FROM_FILE)
     // SY <--
 
+    // KMK -->
+    fun showPageThumbnailStrip() = preferenceStore.getBoolean("pref_show_page_thumbnail_strip", false)
+    // KMK <--
+
     enum class FlashColor {
         BLACK,
         WHITE,

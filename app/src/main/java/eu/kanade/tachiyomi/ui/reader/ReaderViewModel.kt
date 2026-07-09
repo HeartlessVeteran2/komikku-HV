@@ -60,6 +60,7 @@ import exh.util.mangaType
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -100,6 +101,11 @@ import tachiyomi.domain.manga.interactor.GetManga
 import tachiyomi.domain.manga.interactor.GetMergedMangaById
 import tachiyomi.domain.manga.interactor.GetMergedReferencesById
 import tachiyomi.domain.manga.model.Manga
+import tachiyomi.domain.readercomment.interactor.DeleteReaderComment
+import tachiyomi.domain.readercomment.interactor.GetReaderCommentsByChapterId
+import tachiyomi.domain.readercomment.interactor.GetReaderCommentsByMangaId
+import tachiyomi.domain.readercomment.interactor.InsertReaderComment
+import tachiyomi.domain.readercomment.model.ReaderComment
 import tachiyomi.domain.source.service.SourceManager
 import tachiyomi.source.local.isLocal
 import uy.kohesive.injekt.Injekt
@@ -138,6 +144,12 @@ class ReaderViewModel @JvmOverloads constructor(
     private val getMergedReferencesById: GetMergedReferencesById = Injekt.get(),
     private val getMergedChaptersByMangaId: GetMergedChaptersByMangaId = Injekt.get(),
     // SY <--
+    // KMK -->
+    private val getReaderCommentsByChapterId: GetReaderCommentsByChapterId = Injekt.get(),
+    private val getReaderCommentsByMangaId: GetReaderCommentsByMangaId = Injekt.get(),
+    private val insertReaderComment: InsertReaderComment = Injekt.get(),
+    private val deleteReaderComment: DeleteReaderComment = Injekt.get(),
+    // KMK <--
 ) : ViewModel() {
 
     private val mutableState = MutableStateFlow(State())
@@ -199,6 +211,31 @@ class ReaderViewModel @JvmOverloads constructor(
             downloadManager.startDownloads()
         }
     }
+
+    // KMK -->
+    /**
+     * Whether the chapter currently being displayed is already downloaded.
+     */
+    fun isCurrentChapterDownloaded(): Boolean {
+        val currentChapter = state.value.currentChapter?.chapter ?: return false
+        val currentManga = manga ?: return false
+        return downloadManager.isChapterDownloaded(
+            chapterName = currentChapter.name,
+            chapterScanlator = currentChapter.scanlator,
+            chapterUrl = currentChapter.url,
+            mangaTitle = currentManga.ogTitle,
+            sourceId = currentManga.source,
+        )
+    }
+
+    /**
+     * Downloads the chapter currently being displayed, from the reader's bottom bar.
+     */
+    fun downloadCurrentChapter() {
+        val currentChapter = state.value.currentChapter?.chapter?.toDomainChapter() ?: return
+        handleDownloadAction(currentChapter, ChapterDownloadAction.START)
+    }
+    // KMK <--
 
     private fun cancelDownload(chapterId: Long) {
         viewModelScope.launch {
@@ -1129,6 +1166,39 @@ class ReaderViewModel @JvmOverloads constructor(
         mutableState.update { it.copy(dialog = Dialog.ChapterList) }
     }
 
+    // KMK -->
+    fun openGalleryDialog() {
+        mutableState.update { it.copy(dialog = Dialog.Gallery) }
+    }
+
+    fun openCommentsDialog() {
+        mutableState.update { it.copy(dialog = Dialog.Comments) }
+    }
+
+    fun chapterCommentsFlow(chapterId: Long): Flow<List<ReaderComment>> {
+        return getReaderCommentsByChapterId.subscribe(chapterId)
+    }
+
+    fun mangaCommentsFlow(mangaId: Long): Flow<List<ReaderComment>> {
+        return getReaderCommentsByMangaId.subscribe(mangaId)
+    }
+
+    fun addComment(chapterId: Long?, body: String) {
+        val trimmedBody = body.trim()
+        if (trimmedBody.isEmpty()) return
+        val mangaId = manga?.id ?: return
+        viewModelScope.launch {
+            insertReaderComment.await(mangaId, chapterId, trimmedBody)
+        }
+    }
+
+    fun deleteComment(id: Long) {
+        viewModelScope.launch {
+            deleteReaderComment.await(id)
+        }
+    }
+    // KMK <--
+
     fun setDoublePages(doublePages: Boolean) {
         mutableState.update { it.copy(doublePages = doublePages) }
     }
@@ -1527,6 +1597,11 @@ class ReaderViewModel @JvmOverloads constructor(
         data object RetryAllHelp : Dialog
         data object BoostPageHelp : Dialog
         // SY <--
+
+        // KMK -->
+        data object Gallery : Dialog
+        data object Comments : Dialog
+        // KMK <--
     }
 
     sealed interface Event {

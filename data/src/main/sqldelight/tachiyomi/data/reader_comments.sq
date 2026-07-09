@@ -1,0 +1,39 @@
+CREATE TABLE reader_comments(
+    _id INTEGER NOT NULL PRIMARY KEY,
+    manga_id INTEGER NOT NULL,
+    chapter_id INTEGER,
+    body TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL,
+    FOREIGN KEY(manga_id) REFERENCES mangas (_id)
+    ON DELETE CASCADE,
+    FOREIGN KEY(chapter_id) REFERENCES chapters (_id)
+    ON DELETE CASCADE
+);
+
+CREATE INDEX reader_comments_manga_id_index ON reader_comments(manga_id);
+CREATE INDEX reader_comments_chapter_id_index ON reader_comments(chapter_id);
+
+getByChapterId:
+SELECT *
+FROM reader_comments
+WHERE chapter_id = :chapterId
+ORDER BY created_at ASC;
+
+getByMangaId:
+SELECT *
+FROM reader_comments
+WHERE manga_id = :mangaId
+AND chapter_id IS NULL
+ORDER BY created_at ASC;
+
+insert:
+INSERT INTO reader_comments(manga_id, chapter_id, body, created_at, updated_at)
+VALUES (:mangaId, :chapterId, :body, :createdAt, :updatedAt);
+
+deleteById:
+DELETE FROM reader_comments
+WHERE _id = :id;
+
+selectLastInsertedRowId:
+SELECT last_insert_rowid();
