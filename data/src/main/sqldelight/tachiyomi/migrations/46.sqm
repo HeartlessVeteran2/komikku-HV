@@ -1,16 +1,16 @@
--- Create reader_comments table for per-chapter/per-manga reader notes --
-CREATE TABLE IF NOT EXISTS reader_comments(
-    _id INTEGER NOT NULL PRIMARY KEY,
-    manga_id INTEGER NOT NULL,
-    chapter_id INTEGER,
-    body TEXT NOT NULL,
-    created_at INTEGER NOT NULL,
-    updated_at INTEGER NOT NULL,
-    FOREIGN KEY(manga_id) REFERENCES mangas (_id)
-    ON DELETE CASCADE,
-    FOREIGN KEY(chapter_id) REFERENCES chapters (_id)
-    ON DELETE CASCADE
+import kotlin.Boolean;
+
+CREATE TABLE extension_store(
+    index_url TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    badge_label TEXT NOT NULL,
+    signing_key TEXT NOT NULL,
+    contact_website TEXT NOT NULL,
+    contact_discord TEXT,
+    is_legacy INTEGER AS Boolean NOT NULL
 );
 
-CREATE INDEX IF NOT EXISTS reader_comments_manga_id_index ON reader_comments(manga_id);
-CREATE INDEX IF NOT EXISTS reader_comments_chapter_id_index ON reader_comments(chapter_id);
+INSERT INTO extension_store(index_url, name, badge_label, signing_key, contact_website, contact_discord, is_legacy)
+SELECT base_url || '/repo.json', name, coalesce(short_name, name), signing_key_fingerprint, website, NULL, 1 FROM extension_repos;
+
+DROP TABLE extension_repos;
