@@ -4,21 +4,15 @@ import android.net.Uri
 import androidx.core.net.toUri
 import eu.kanade.tachiyomi.data.database.models.Track
 import eu.kanade.tachiyomi.data.track.anilist.dto.ALAddMangaResult
-// KMK -->
 import eu.kanade.tachiyomi.data.track.anilist.dto.ALContinueReadingEntry
 import eu.kanade.tachiyomi.data.track.anilist.dto.ALContinueReadingResult
-// KMK <--
 import eu.kanade.tachiyomi.data.track.anilist.dto.ALCurrentUserResult
 import eu.kanade.tachiyomi.data.track.anilist.dto.ALError
-// KMK -->
 import eu.kanade.tachiyomi.data.track.anilist.dto.ALHomeMediaPageResult
-// KMK <--
 import eu.kanade.tachiyomi.data.track.anilist.dto.ALIdSearchResult
 import eu.kanade.tachiyomi.data.track.anilist.dto.ALMangaMetadata
-// KMK -->
 import eu.kanade.tachiyomi.data.track.anilist.dto.ALMediaDetailMedia
 import eu.kanade.tachiyomi.data.track.anilist.dto.ALMediaDetailResult
-// KMK <--
 import eu.kanade.tachiyomi.data.track.anilist.dto.ALOAuth
 import eu.kanade.tachiyomi.data.track.anilist.dto.ALSearchItem
 import eu.kanade.tachiyomi.data.track.anilist.dto.ALSearchResult
@@ -43,9 +37,7 @@ import okhttp3.Response
 import tachiyomi.core.common.util.lang.withIOContext
 import uy.kohesive.injekt.injectLazy
 import java.time.Instant
-// KMK -->
 import java.time.Year
-// KMK <--
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import kotlin.time.Duration.Companion.minutes
