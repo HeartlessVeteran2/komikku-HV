@@ -16,7 +16,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -63,7 +62,9 @@ fun ReaderPageGalleryDialog(
                 )
             },
         ) { contentPadding ->
-            val gridState = rememberLazyGridState(initialFirstVisibleItemIndex = currentPageIndex)
+            val gridState = rememberLazyGridState(
+                initialFirstVisibleItemIndex = currentPageIndex.coerceIn(0, pages.lastIndex.coerceAtLeast(0)),
+            )
             LazyVerticalGrid(
                 state = gridState,
                 columns = GridCells.Adaptive(minSize = 96.dp),
@@ -97,10 +98,11 @@ private fun GalleryPageTile(
     isSelected: Boolean,
     onClick: () -> Unit,
 ) {
-    val status by page.statusFlow.collectAsState()
     var thumbnailFile by remember(mangaId, chapterId, page.index) { mutableStateOf<File?>(null) }
-    LaunchedEffect(mangaId, chapterId, page.index, status) {
-        thumbnailFile = thumbnailProvider.getThumbnailFile(mangaId, chapterId, page)
+    LaunchedEffect(mangaId, chapterId, page) {
+        page.statusFlow.collect {
+            thumbnailFile = thumbnailProvider.getThumbnailFile(mangaId, chapterId, page)
+        }
     }
 
     val shape = RoundedCornerShape(4.dp)

@@ -45,7 +45,7 @@ class ReaderPageThumbnailCache(private val context: Context) {
      */
     fun isThumbnailCached(mangaId: Long, chapterId: Long, pageIndex: Int): Boolean {
         return try {
-            diskCache.get(keyFor(mangaId, chapterId, pageIndex)) != null
+            diskCache.get(keyFor(mangaId, chapterId, pageIndex))?.use { true } ?: false
         } catch (e: IOException) {
             false
         }
