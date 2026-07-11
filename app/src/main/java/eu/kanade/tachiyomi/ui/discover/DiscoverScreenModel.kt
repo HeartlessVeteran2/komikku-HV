@@ -7,7 +7,6 @@ import eu.kanade.presentation.util.ioCoroutineScope
 import eu.kanade.tachiyomi.data.track.TrackerManager
 import eu.kanade.tachiyomi.data.track.anilist.dto.ALContinueReadingEntry
 import eu.kanade.tachiyomi.data.track.anilist.dto.ALSearchItem
-import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -16,8 +15,9 @@ import uy.kohesive.injekt.api.get
 
 /**
  * Backs the Discover home tab: three public AniList rows (Trending, All-Time Popular, Popular
- * This Year) fetched in parallel on init, plus a personalized Continue Reading row that's only
- * populated while the AniList tracker is logged in and updates reactively as login state changes.
+ * This Year) each fetched in their own coroutine on init so one slow row doesn't delay the
+ * others, plus a personalized Continue Reading row that's only populated while the AniList
+ * tracker is logged in and updates reactively as login state changes.
  */
 // KMK -->
 class DiscoverScreenModel(
@@ -25,14 +25,19 @@ class DiscoverScreenModel(
 ) : StateScreenModel<DiscoverScreenModel.State>(State()) {
 
     init {
+        // Each row is fetched in its own coroutine so a slow row never delays rendering the
+        // others once they're ready.
         ioCoroutineScope.launch {
-            val trendingDeferred = async { runCatching { trackerManager.aniList.api.getTrending() } }
-            val allTimePopularDeferred = async { runCatching { trackerManager.aniList.api.getAllTimePopular() } }
-            val popularThisYearDeferred = async { runCatching { trackerManager.aniList.api.getPopularThisYear() } }
-
-            mutableState.update { it.copy(trending = trendingDeferred.await().toRowResult()) }
-            mutableState.update { it.copy(allTimePopular = allTimePopularDeferred.await().toRowResult()) }
-            mutableState.update { it.copy(popularThisYear = popularThisYearDeferred.await().toRowResult()) }
+            val result = runCatching { trackerManager.aniList.api.getTrending() }
+            mutableState.update { it.copy(trending = result.toRowResult()) }
+        }
+        ioCoroutineScope.launch {
+            val result = runCatching { trackerManager.aniList.api.getAllTimePopular() }
+            mutableState.update { it.copy(allTimePopular = result.toRowResult()) }
+        }
+        ioCoroutineScope.launch {
+            val result = runCatching { trackerManager.aniList.api.getPopularThisYear() }
+            mutableState.update { it.copy(popularThisYear = result.toRowResult()) }
         }
 
         screenModelScope.launch {

@@ -12,7 +12,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ChromeReaderMode
 import androidx.compose.material3.Button
@@ -88,7 +90,11 @@ private fun MediaDetailBody(
     onClickRelated: (Long) -> Unit,
     onClickRead: (String) -> Unit,
 ) {
-    Column(modifier = Modifier.padding(contentPadding)) {
+    Column(
+        modifier = Modifier
+            .verticalScroll(rememberScrollState())
+            .padding(contentPadding),
+    ) {
         media.bannerImage?.let { banner ->
             AsyncImage(
                 model = banner,
@@ -118,8 +124,8 @@ private fun MediaDetailBody(
             Column {
                 Text(text = media.title.userPreferred, style = MaterialTheme.typography.titleLarge)
                 val meta = listOfNotNull(
-                    media.format?.replace("_", " "),
-                    media.status?.replace("_", " "),
+                    media.format?.toDisplayCase(),
+                    media.status?.toDisplayCase(),
                     media.averageScore?.let { "$it%" },
                     media.chapters?.let { "$it ch" },
                 ).joinToString(" • ")
@@ -180,11 +186,13 @@ private fun MediaDetailBody(
         val relatedManga = media.relations.edges
             .filter { it.node.type == "MANGA" }
             .map { it.node.toCardItem() }
-        AniListMediaRow(
-            title = stringResource(KMR.strings.discover_related),
-            result = DiscoverRowResult.Success(relatedManga),
-            onClickMedia = onClickRelated,
-        )
+        if (relatedManga.isNotEmpty()) {
+            AniListMediaRow(
+                title = stringResource(KMR.strings.discover_related),
+                result = DiscoverRowResult.Success(relatedManga),
+                onClickMedia = onClickRelated,
+            )
+        }
 
         Button(
             onClick = { onClickRead(media.title.userPreferred) },
@@ -223,5 +231,10 @@ private fun CharacterCard(edge: ALCharacterEdge) {
             textAlign = TextAlign.Center,
         )
     }
+}
+
+/** AniList's format/status enums come back SCREAMING_SNAKE_CASE (e.g. "RELEASING"). */
+private fun String.toDisplayCase(): String {
+    return replace("_", " ").lowercase().replaceFirstChar { it.uppercase() }
 }
 // KMK <--
