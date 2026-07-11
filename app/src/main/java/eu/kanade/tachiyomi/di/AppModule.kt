@@ -15,6 +15,7 @@ import eu.kanade.tachiyomi.data.SyncStatus
 import eu.kanade.tachiyomi.data.cache.ChapterCache
 import eu.kanade.tachiyomi.data.cache.CoverCache
 import eu.kanade.tachiyomi.data.cache.PagePreviewCache
+import eu.kanade.tachiyomi.data.cache.ReaderPageThumbnailCache
 import eu.kanade.tachiyomi.data.connections.ConnectionsManager
 import eu.kanade.tachiyomi.data.download.DownloadCache
 import eu.kanade.tachiyomi.data.download.DownloadManager
@@ -175,6 +176,10 @@ class AppModule(val app: Application) : InjektModule {
 
         addSingletonFactory { PagePreviewCache(app) }
         // SY <--
+
+        // KMK -->
+        addSingletonFactory { ReaderPageThumbnailCache(app) }
+        // KMK <--
 
         // KMK -->
         addSingletonFactory { BackupRestoreStatus() }

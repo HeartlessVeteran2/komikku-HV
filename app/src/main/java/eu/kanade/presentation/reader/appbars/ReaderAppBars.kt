@@ -28,6 +28,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import eu.kanade.presentation.reader.components.ChapterNavigator
+import eu.kanade.presentation.reader.components.PageThumbnailStrip
+import eu.kanade.tachiyomi.ui.reader.model.ReaderPage
 import eu.kanade.tachiyomi.ui.reader.setting.ReaderOrientation
 import eu.kanade.tachiyomi.ui.reader.setting.ReadingMode
 import eu.kanade.tachiyomi.ui.reader.viewer.Viewer
@@ -99,6 +101,13 @@ fun ReaderAppBars(
     onClickPageLayout: () -> Unit,
     onClickShiftPage: () -> Unit,
     // SY <--
+    // KMK -->
+    onClickPageGallery: () -> Unit,
+    showPageThumbnailStrip: Boolean,
+    pages: List<ReaderPage>,
+    thumbnailMangaId: Long?,
+    thumbnailChapterId: Long?,
+    // KMK <--
 ) {
     val isRtl = viewer is R2LPagerViewer
     val backgroundColor = MaterialTheme.colorScheme
@@ -235,20 +244,34 @@ fun ReaderAppBars(
                 // SY -->
                 if (navBarType == NavBarType.Bottom) {
                     // SY <--
-                    ChapterNavigator(
-                        isRtl = isRtl,
-                        onNextChapter = onNextChapter,
-                        enabledNext = enabledNext,
-                        onPreviousChapter = onPreviousChapter,
-                        enabledPrevious = enabledPrevious,
-                        currentPage = currentPage,
-                        totalPages = totalPages,
-                        onPageIndexChange = onPageIndexChange,
-                        // SY -->
-                        isVerticalSlider = false,
-                        currentPageText = currentPageText,
-                        // SY <--
-                    )
+                    // KMK -->
+                    if (showPageThumbnailStrip && thumbnailMangaId != null && thumbnailChapterId != null && pages.isNotEmpty()) {
+                        PageThumbnailStrip(
+                            pages = pages,
+                            mangaId = thumbnailMangaId,
+                            chapterId = thumbnailChapterId,
+                            currentPage = currentPage,
+                            onPageIndexChange = onPageIndexChange,
+                        )
+                    } else {
+                        // KMK <--
+                        ChapterNavigator(
+                            isRtl = isRtl,
+                            onNextChapter = onNextChapter,
+                            enabledNext = enabledNext,
+                            onPreviousChapter = onPreviousChapter,
+                            enabledPrevious = enabledPrevious,
+                            currentPage = currentPage,
+                            totalPages = totalPages,
+                            onPageIndexChange = onPageIndexChange,
+                            // SY -->
+                            isVerticalSlider = false,
+                            currentPageText = currentPageText,
+                            // SY <--
+                        )
+                        // KMK -->
+                    }
+                    // KMK <--
                 }
                 ReaderBottomBar(
                     modifier = Modifier
@@ -275,6 +298,9 @@ fun ReaderAppBars(
                     onClickPageLayout = onClickPageLayout,
                     onClickShiftPage = onClickShiftPage,
                     // SY <--
+                    // KMK -->
+                    onClickPageGallery = onClickPageGallery,
+                    // KMK <--
                 )
             }
         }

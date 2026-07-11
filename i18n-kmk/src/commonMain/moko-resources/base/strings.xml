@@ -238,4 +238,9 @@
     <string name="pref_discord_show_download_button_summary">Displays a button to download the app</string>
     <string name="pref_discord_show_discord_button">Show Discord Button</string>
     <string name="pref_discord_show_discord_button_summary">Displays a button to join the Discord server</string>
+    <!-- Reader page thumbnails -->
+    <string name="pref_show_page_thumbnail_strip">Page thumbnail strip</string>
+    <string name="pref_show_page_thumbnail_strip_summary">Show page thumbnails instead of a plain slider</string>
+    <string name="action_page_gallery">Page gallery</string>
+    <string name="pref_clear_reader_thumbnail_cache">Clear reader thumbnail cache</string>
 </resources>

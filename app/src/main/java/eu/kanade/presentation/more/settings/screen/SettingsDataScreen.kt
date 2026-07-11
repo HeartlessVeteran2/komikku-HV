@@ -63,6 +63,7 @@ import eu.kanade.tachiyomi.data.backup.create.BackupCreateJob
 import eu.kanade.tachiyomi.data.backup.restore.BackupRestoreJob
 import eu.kanade.tachiyomi.data.cache.ChapterCache
 import eu.kanade.tachiyomi.data.cache.PagePreviewCache
+import eu.kanade.tachiyomi.data.cache.ReaderPageThumbnailCache
 import eu.kanade.tachiyomi.data.export.LibraryExporter
 import eu.kanade.tachiyomi.data.export.LibraryExporter.ExportOptions
 import eu.kanade.tachiyomi.data.sync.SyncDataJob
@@ -350,6 +351,12 @@ object SettingsDataScreen : SearchableSettings {
         val pagePreviewReadableSize = remember(pagePreviewReadableSizeSema) { pagePreviewCache.readableSize }
         // SY <--
 
+        // KMK -->
+        val readerThumbnailCache = remember { Injekt.get<ReaderPageThumbnailCache>() }
+        var readerThumbnailReadableSizeSema by remember { mutableIntStateOf(0) }
+        val readerThumbnailReadableSize = remember(readerThumbnailReadableSizeSema) { readerThumbnailCache.readableSize }
+        // KMK <--
+
         return Preference.PreferenceGroup(
             title = stringResource(MR.strings.pref_storage_usage),
             preferenceItems = persistentListOf(
@@ -403,6 +410,26 @@ object SettingsDataScreen : SearchableSettings {
                     },
                 ),
                 // SY <--
+                // KMK -->
+                Preference.PreferenceItem.TextPreference(
+                    title = stringResource(KMR.strings.pref_clear_reader_thumbnail_cache),
+                    subtitle = stringResource(MR.strings.used_cache, readerThumbnailReadableSize),
+                    onClick = {
+                        scope.launchNonCancellable {
+                            try {
+                                val deletedFiles = readerThumbnailCache.clear()
+                                withUIContext {
+                                    context.toast(context.stringResource(MR.strings.cache_deleted, deletedFiles))
+                                    readerThumbnailReadableSizeSema++
+                                }
+                            } catch (e: Throwable) {
+                                logcat(LogPriority.ERROR, e)
+                                withUIContext { context.toast(MR.strings.cache_delete_error) }
+                            }
+                        }
+                    },
+                ),
+                // KMK <--
                 Preference.PreferenceItem.SwitchPreference(
                     preference = libraryPreferences.autoClearChapterCache(),
                     title = stringResource(MR.strings.pref_auto_clear_chapter_cache),

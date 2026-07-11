@@ -639,6 +639,13 @@ object SettingsReaderScreen : SearchableSettings {
                     title = stringResource(SYMR.strings.reader_bottom_buttons),
                     subtitle = stringResource(SYMR.strings.reader_bottom_buttons_summary),
                 ),
+                // KMK -->
+                Preference.PreferenceItem.SwitchPreference(
+                    preference = readerPreferences.showPageThumbnailStrip(),
+                    title = stringResource(KMR.strings.pref_show_page_thumbnail_strip),
+                    subtitle = stringResource(KMR.strings.pref_show_page_thumbnail_strip_summary),
+                ),
+                // KMK <--
                 Preference.PreferenceItem.ListPreference(
                     preference = readerPreferences.pageLayout(),
                     entries = ReaderPreferences.PageLayouts

@@ -26,6 +26,7 @@ concurrency:
 jobs:
   trigger_preview_build:
     name: Trigger preview build
+    if: github.repository == 'komikku-app/komikku'
     runs-on: 'ubuntu-24.04'
 
     steps:
