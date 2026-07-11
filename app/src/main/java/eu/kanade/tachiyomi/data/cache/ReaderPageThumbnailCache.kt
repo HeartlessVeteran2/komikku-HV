@@ -2,8 +2,11 @@ package eu.kanade.tachiyomi.data.cache
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.text.format.Formatter
 import com.jakewharton.disklrucache.DiskLruCache
 import eu.kanade.tachiyomi.util.storage.DiskUtil
+import logcat.LogPriority
+import tachiyomi.core.common.util.system.logcat
 import java.io.File
 import java.io.IOException
 
@@ -78,6 +81,34 @@ class ReaderPageThumbnailCache(private val context: Context) {
         } catch (e: Exception) {
             editor?.abortUnlessCommitted()
             null
+        }
+    }
+
+    /**
+     * Returns the size of the cache directory in a human readable format, for display in
+     * Settings > Data and storage.
+     */
+    val readableSize: String
+        get() = Formatter.formatFileSize(context, DiskUtil.getDirectorySize(cacheDirectory))
+
+    /**
+     * Clears every cached thumbnail. Returns the number of files deleted.
+     */
+    fun clear(): Int {
+        var deletedFiles = 0
+        cacheDirectory.listFiles()?.forEach {
+            if (removeFileFromCache(it.name)) deletedFiles++
+        }
+        return deletedFiles
+    }
+
+    private fun removeFileFromCache(file: String): Boolean {
+        if (file == "journal" || file.startsWith("journal.")) return false
+        return try {
+            diskCache.remove(file.substringBeforeLast("."))
+        } catch (e: Exception) {
+            logcat(LogPriority.WARN, e) { "Failed to remove file from cache" }
+            false
         }
     }
 }

@@ -18,18 +18,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import eu.kanade.tachiyomi.ui.reader.model.ReaderPage
-import eu.kanade.tachiyomi.ui.reader.viewer.ReaderThumbnailProvider
-import java.io.File
+import eu.kanade.tachiyomi.ui.reader.model.ReaderPageThumbnailRequest
 
 private val TILE_WIDTH = 40.dp
 private val STRIP_HEIGHT = 56.dp
@@ -48,7 +45,6 @@ fun PageThumbnailStrip(
     chapterId: Long,
     currentPage: Int,
     onPageIndexChange: (Int) -> Unit,
-    thumbnailProvider: ReaderThumbnailProvider,
     modifier: Modifier = Modifier,
 ) {
     if (pages.isEmpty()) return
@@ -74,7 +70,6 @@ fun PageThumbnailStrip(
                 page = page,
                 mangaId = mangaId,
                 chapterId = chapterId,
-                thumbnailProvider = thumbnailProvider,
                 isSelected = index == currentIndex,
                 onClick = { onPageIndexChange(index) },
             )
@@ -87,17 +82,10 @@ private fun PageThumbnailTile(
     page: ReaderPage,
     mangaId: Long,
     chapterId: Long,
-    thumbnailProvider: ReaderThumbnailProvider,
     isSelected: Boolean,
     onClick: () -> Unit,
 ) {
-    var thumbnailFile by remember(mangaId, chapterId, page.index) { mutableStateOf<File?>(null) }
-    LaunchedEffect(mangaId, chapterId, page) {
-        page.statusFlow.collect {
-            thumbnailFile = thumbnailProvider.getThumbnailFile(mangaId, chapterId, page)
-        }
-    }
-
+    val haptic = LocalHapticFeedback.current
     val shape = RoundedCornerShape(4.dp)
     Box(
         modifier = Modifier
@@ -112,17 +100,17 @@ private fun PageThumbnailTile(
                     Modifier
                 },
             )
-            .clickable(onClick = onClick),
+            .clickable {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                onClick()
+            },
     ) {
-        val file = thumbnailFile
-        if (file != null) {
-            AsyncImage(
-                model = file,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize(),
-            )
-        }
+        AsyncImage(
+            model = ReaderPageThumbnailRequest(mangaId, chapterId, page),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize(),
+        )
     }
 }
 // KMK <--

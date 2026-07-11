@@ -32,7 +32,6 @@ import eu.kanade.presentation.reader.components.PageThumbnailStrip
 import eu.kanade.tachiyomi.ui.reader.model.ReaderPage
 import eu.kanade.tachiyomi.ui.reader.setting.ReaderOrientation
 import eu.kanade.tachiyomi.ui.reader.setting.ReadingMode
-import eu.kanade.tachiyomi.ui.reader.viewer.ReaderThumbnailProvider
 import eu.kanade.tachiyomi.ui.reader.viewer.Viewer
 import eu.kanade.tachiyomi.ui.reader.viewer.pager.R2LPagerViewer
 import kotlinx.collections.immutable.ImmutableSet
@@ -108,7 +107,6 @@ fun ReaderAppBars(
     pages: List<ReaderPage>,
     thumbnailMangaId: Long?,
     thumbnailChapterId: Long?,
-    thumbnailProvider: ReaderThumbnailProvider,
     // KMK <--
 ) {
     val isRtl = viewer is R2LPagerViewer
@@ -254,7 +252,6 @@ fun ReaderAppBars(
                             chapterId = thumbnailChapterId,
                             currentPage = currentPage,
                             onPageIndexChange = onPageIndexChange,
-                            thumbnailProvider = thumbnailProvider,
                         )
                     } else {
                         // KMK <--

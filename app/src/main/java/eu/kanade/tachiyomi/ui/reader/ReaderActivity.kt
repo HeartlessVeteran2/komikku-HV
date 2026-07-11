@@ -101,7 +101,6 @@ import eu.kanade.tachiyomi.ui.reader.setting.ReaderPreferences
 import eu.kanade.tachiyomi.ui.reader.setting.ReaderSettingsScreenModel
 import eu.kanade.tachiyomi.ui.reader.setting.ReadingMode
 import eu.kanade.tachiyomi.ui.reader.viewer.ReaderProgressIndicator
-import eu.kanade.tachiyomi.ui.reader.viewer.ReaderThumbnailProvider
 import eu.kanade.tachiyomi.ui.reader.viewer.pager.PagerConfig
 import eu.kanade.tachiyomi.ui.reader.viewer.pager.PagerViewer
 import eu.kanade.tachiyomi.ui.reader.viewer.pager.VerticalPagerViewer
@@ -169,10 +168,6 @@ class ReaderActivity : BaseActivity() {
 
     private val readerPreferences = Injekt.get<ReaderPreferences>()
     private val preferences = Injekt.get<BasePreferences>()
-
-    // KMK -->
-    private val readerThumbnailProvider = Injekt.get<ReaderThumbnailProvider>()
-    // KMK <--
 
     // KMK -->
     val themeCoverBased = Injekt.get<UiPreferences>().themeCoverBased().get()
@@ -496,7 +491,6 @@ class ReaderActivity : BaseActivity() {
                             chapterId = galleryChapterId,
                             currentPageIndex = state.currentPage - 1,
                             onPageSelected = ::moveToPageIndex,
-                            thumbnailProvider = readerThumbnailProvider,
                             onDismissRequest = onDismissRequest,
                         )
                     }
@@ -779,7 +773,6 @@ class ReaderActivity : BaseActivity() {
             pages = state.currentChapter?.pages.orEmpty(),
             thumbnailMangaId = state.manga?.id,
             thumbnailChapterId = state.currentChapter?.chapter?.id,
-            thumbnailProvider = readerThumbnailProvider,
             // KMK <--
             onClickPageLayout = {
                 if (readerPreferences.pageLayout().get() == PagerConfig.PageLayout.AUTOMATIC) {

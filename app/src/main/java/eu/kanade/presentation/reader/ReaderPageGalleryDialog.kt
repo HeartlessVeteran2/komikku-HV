@@ -15,26 +15,22 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil3.compose.AsyncImage
 import eu.kanade.presentation.components.AppBar
 import eu.kanade.tachiyomi.ui.reader.model.ReaderPage
-import eu.kanade.tachiyomi.ui.reader.viewer.ReaderThumbnailProvider
+import eu.kanade.tachiyomi.ui.reader.model.ReaderPageThumbnailRequest
 import tachiyomi.i18n.kmk.KMR
 import tachiyomi.presentation.core.components.material.Scaffold
 import tachiyomi.presentation.core.i18n.stringResource
-import java.io.File
 
 /**
  * A full-screen grid of every page in the current chapter. Tapping a tile jumps to that page.
@@ -47,7 +43,6 @@ fun ReaderPageGalleryDialog(
     chapterId: Long,
     currentPageIndex: Int,
     onPageSelected: (Int) -> Unit,
-    thumbnailProvider: ReaderThumbnailProvider,
     onDismissRequest: () -> Unit,
 ) {
     Dialog(
@@ -76,7 +71,6 @@ fun ReaderPageGalleryDialog(
                         page = page,
                         mangaId = mangaId,
                         chapterId = chapterId,
-                        thumbnailProvider = thumbnailProvider,
                         isSelected = index == currentPageIndex,
                         onClick = {
                             onPageSelected(index)
@@ -94,17 +88,10 @@ private fun GalleryPageTile(
     page: ReaderPage,
     mangaId: Long,
     chapterId: Long,
-    thumbnailProvider: ReaderThumbnailProvider,
     isSelected: Boolean,
     onClick: () -> Unit,
 ) {
-    var thumbnailFile by remember(mangaId, chapterId, page.index) { mutableStateOf<File?>(null) }
-    LaunchedEffect(mangaId, chapterId, page) {
-        page.statusFlow.collect {
-            thumbnailFile = thumbnailProvider.getThumbnailFile(mangaId, chapterId, page)
-        }
-    }
-
+    val haptic = LocalHapticFeedback.current
     val shape = RoundedCornerShape(4.dp)
     Box(
         contentAlignment = Alignment.BottomEnd,
@@ -120,17 +107,17 @@ private fun GalleryPageTile(
                     Modifier
                 },
             )
-            .clickable(onClick = onClick),
+            .clickable {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                onClick()
+            },
     ) {
-        val file = thumbnailFile
-        if (file != null) {
-            AsyncImage(
-                model = file,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize(),
-            )
-        }
+        AsyncImage(
+            model = ReaderPageThumbnailRequest(mangaId, chapterId, page),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize(),
+        )
         Text(
             text = page.number.toString(),
             modifier = Modifier
