@@ -71,6 +71,7 @@ import eu.kanade.presentation.reader.DisplayRefreshHost
 import eu.kanade.presentation.reader.OrientationSelectDialog
 import eu.kanade.presentation.reader.ReaderContentOverlay
 import eu.kanade.presentation.reader.ReaderPageActionsDialog
+import eu.kanade.presentation.reader.ReaderPageGalleryDialog
 import eu.kanade.presentation.reader.ReaderPageIndicator
 import eu.kanade.presentation.reader.ReadingModeSelectDialog
 import eu.kanade.presentation.reader.appbars.NavBarType
@@ -100,6 +101,7 @@ import eu.kanade.tachiyomi.ui.reader.setting.ReaderPreferences
 import eu.kanade.tachiyomi.ui.reader.setting.ReaderSettingsScreenModel
 import eu.kanade.tachiyomi.ui.reader.setting.ReadingMode
 import eu.kanade.tachiyomi.ui.reader.viewer.ReaderProgressIndicator
+import eu.kanade.tachiyomi.ui.reader.viewer.ReaderThumbnailProvider
 import eu.kanade.tachiyomi.ui.reader.viewer.pager.PagerConfig
 import eu.kanade.tachiyomi.ui.reader.viewer.pager.PagerViewer
 import eu.kanade.tachiyomi.ui.reader.viewer.pager.VerticalPagerViewer
@@ -167,6 +169,10 @@ class ReaderActivity : BaseActivity() {
 
     private val readerPreferences = Injekt.get<ReaderPreferences>()
     private val preferences = Injekt.get<BasePreferences>()
+
+    // KMK -->
+    private val readerThumbnailProvider = Injekt.get<ReaderThumbnailProvider>()
+    // KMK <--
 
     // KMK -->
     val themeCoverBased = Injekt.get<UiPreferences>().themeCoverBased().get()
@@ -479,6 +485,24 @@ class ReaderActivity : BaseActivity() {
                     )
                 }
 
+                // KMK -->
+                ReaderViewModel.Dialog.Gallery -> {
+                    val galleryMangaId = state.manga?.id
+                    val galleryChapterId = state.currentChapter?.chapter?.id
+                    if (galleryMangaId != null && galleryChapterId != null) {
+                        ReaderPageGalleryDialog(
+                            pages = state.currentChapter?.pages.orEmpty(),
+                            mangaId = galleryMangaId,
+                            chapterId = galleryChapterId,
+                            currentPageIndex = state.currentPage - 1,
+                            onPageSelected = ::moveToPageIndex,
+                            thumbnailProvider = readerThumbnailProvider,
+                            onDismissRequest = onDismissRequest,
+                        )
+                    }
+                }
+                // KMK <--
+
                 ReaderViewModel.Dialog.AutoScrollHelp -> AlertDialog(
                     onDismissRequest = onDismissRequest,
                     confirmButton = {
@@ -683,6 +707,10 @@ class ReaderActivity : BaseActivity() {
         }
         // SY <--
 
+        // KMK -->
+        val showPageThumbnailStrip by readerPreferences.showPageThumbnailStrip().collectAsState()
+        // KMK <--
+
         ReaderAppBars(
             visible = state.menuVisible,
 
@@ -745,6 +773,14 @@ class ReaderActivity : BaseActivity() {
             dualPageSplitEnabled = dualPageSplitPaged,
             doublePages = state.doublePages,
             onClickChapterList = viewModel::openChapterListDialog,
+            // KMK -->
+            onClickPageGallery = viewModel::openGalleryDialog,
+            showPageThumbnailStrip = showPageThumbnailStrip,
+            pages = state.currentChapter?.pages.orEmpty(),
+            thumbnailMangaId = state.manga?.id,
+            thumbnailChapterId = state.currentChapter?.chapter?.id,
+            thumbnailProvider = readerThumbnailProvider,
+            // KMK <--
             onClickPageLayout = {
                 if (readerPreferences.pageLayout().get() == PagerConfig.PageLayout.AUTOMATIC) {
                     (viewModel.state.value.viewer as? PagerViewer)?.config?.let { config ->

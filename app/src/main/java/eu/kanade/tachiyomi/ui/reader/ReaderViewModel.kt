@@ -1129,6 +1129,12 @@ class ReaderViewModel @JvmOverloads constructor(
         mutableState.update { it.copy(dialog = Dialog.ChapterList) }
     }
 
+    // KMK -->
+    fun openGalleryDialog() {
+        mutableState.update { it.copy(dialog = Dialog.Gallery) }
+    }
+    // KMK <--
+
     fun setDoublePages(doublePages: Boolean) {
         mutableState.update { it.copy(doublePages = doublePages) }
     }
@@ -1527,6 +1533,10 @@ class ReaderViewModel @JvmOverloads constructor(
         data object RetryAllHelp : Dialog
         data object BoostPageHelp : Dialog
         // SY <--
+
+        // KMK -->
+        data object Gallery : Dialog
+        // KMK <--
     }
 
     sealed interface Event {
