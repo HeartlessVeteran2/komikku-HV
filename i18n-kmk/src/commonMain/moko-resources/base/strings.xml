@@ -243,4 +243,13 @@
     <string name="pref_show_page_thumbnail_strip_summary">Show page thumbnails instead of a plain slider</string>
     <string name="action_page_gallery">Page gallery</string>
     <string name="pref_clear_reader_thumbnail_cache">Clear reader thumbnail cache</string>
+    <!-- Discover (AniList-powered home tab) -->
+    <string name="label_discover">Discover</string>
+    <string name="discover_continue_reading">Continue Reading</string>
+    <string name="discover_trending_now">Trending Now</string>
+    <string name="discover_popular_this_year">Popular This Year</string>
+    <string name="discover_all_time_popular">All-Time Popular</string>
+    <string name="discover_related">Related</string>
+    <string name="discover_characters">Characters</string>
+    <string name="discover_action_read">Read</string>
 </resources>
