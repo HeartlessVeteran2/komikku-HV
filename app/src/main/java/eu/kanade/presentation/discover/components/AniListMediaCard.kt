@@ -1,9 +1,12 @@
 package eu.kanade.presentation.discover.components
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
 import eu.kanade.presentation.browse.components.MangaItem
+import eu.kanade.tachiyomi.data.track.anilist.AnilistApi
 import eu.kanade.tachiyomi.data.track.anilist.dto.ALRelationNode
 import eu.kanade.tachiyomi.data.track.anilist.dto.ALSearchItem
+import eu.kanade.tachiyomi.ui.webview.WebViewActivity
 import tachiyomi.domain.manga.model.MangaCover
 
 /**
@@ -27,6 +30,7 @@ fun ALRelationNode.toCardItem() = DiscoverCardItem(id = id, title = title.userPr
 
 @Composable
 fun AniListMediaCard(item: DiscoverCardItem, onClick: () -> Unit) {
+    val context = LocalContext.current
     MangaItem(
         title = item.title,
         cover = MangaCover(
@@ -38,7 +42,10 @@ fun AniListMediaCard(item: DiscoverCardItem, onClick: () -> Unit) {
         ),
         isFavorite = false,
         onClick = onClick,
-        onLongClick = onClick,
+        onLongClick = {
+            WebViewActivity.newIntent(context, AnilistApi.mangaUrl(item.id), title = item.title)
+                .let(context::startActivity)
+        },
     )
 }
 // KMK <--

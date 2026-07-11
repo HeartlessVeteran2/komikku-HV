@@ -63,6 +63,11 @@ fun DiscoverMediaDetailContent(
                 scrollBehavior = scrollBehavior,
             )
         },
+        bottomBar = {
+            if (state is DiscoverMediaDetailScreenModel.State.Success) {
+                ReadButton(onClick = { onClickRead(state.media.title.userPreferred) })
+            }
+        },
     ) { contentPadding ->
         when (state) {
             DiscoverMediaDetailScreenModel.State.Loading -> LoadingScreen(Modifier.padding(contentPadding))
@@ -76,10 +81,25 @@ fun DiscoverMediaDetailContent(
                     media = state.media,
                     contentPadding = contentPadding,
                     onClickRelated = onClickRelated,
-                    onClickRead = onClickRead,
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun ReadButton(onClick: () -> Unit) {
+    Button(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(MaterialTheme.padding.medium),
+    ) {
+        Icon(imageVector = Icons.AutoMirrored.Outlined.ChromeReaderMode, contentDescription = null)
+        Text(
+            text = stringResource(KMR.strings.discover_action_read),
+            modifier = Modifier.padding(start = MaterialTheme.padding.small),
+        )
     }
 }
 
@@ -88,7 +108,6 @@ private fun MediaDetailBody(
     media: ALMediaDetailMedia,
     contentPadding: PaddingValues,
     onClickRelated: (Long) -> Unit,
-    onClickRead: (String) -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -138,7 +157,8 @@ private fun MediaDetailBody(
         if (media.genres.isNotEmpty()) {
             FlowRow(
                 modifier = Modifier.padding(horizontal = MaterialTheme.padding.medium),
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.extraSmall),
+                verticalArrangement = Arrangement.spacedBy(MaterialTheme.padding.extraSmall),
             ) {
                 media.genres.forEach { genre ->
                     TagsChip(text = genre, onClick = null)
@@ -191,19 +211,6 @@ private fun MediaDetailBody(
                 title = stringResource(KMR.strings.discover_related),
                 result = DiscoverRowResult.Success(relatedManga),
                 onClickMedia = onClickRelated,
-            )
-        }
-
-        Button(
-            onClick = { onClickRead(media.title.userPreferred) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(MaterialTheme.padding.medium),
-        ) {
-            Icon(imageVector = Icons.AutoMirrored.Outlined.ChromeReaderMode, contentDescription = null)
-            Text(
-                text = stringResource(KMR.strings.discover_action_read),
-                modifier = Modifier.padding(start = MaterialTheme.padding.small),
             )
         }
     }
