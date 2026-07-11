@@ -4,11 +4,23 @@ import android.net.Uri
 import androidx.core.net.toUri
 import eu.kanade.tachiyomi.data.database.models.Track
 import eu.kanade.tachiyomi.data.track.anilist.dto.ALAddMangaResult
+// KMK -->
+import eu.kanade.tachiyomi.data.track.anilist.dto.ALContinueReadingEntry
+import eu.kanade.tachiyomi.data.track.anilist.dto.ALContinueReadingResult
+// KMK <--
 import eu.kanade.tachiyomi.data.track.anilist.dto.ALCurrentUserResult
 import eu.kanade.tachiyomi.data.track.anilist.dto.ALError
+// KMK -->
+import eu.kanade.tachiyomi.data.track.anilist.dto.ALHomeMediaPageResult
+// KMK <--
 import eu.kanade.tachiyomi.data.track.anilist.dto.ALIdSearchResult
 import eu.kanade.tachiyomi.data.track.anilist.dto.ALMangaMetadata
+// KMK -->
+import eu.kanade.tachiyomi.data.track.anilist.dto.ALMediaDetailMedia
+import eu.kanade.tachiyomi.data.track.anilist.dto.ALMediaDetailResult
+// KMK <--
 import eu.kanade.tachiyomi.data.track.anilist.dto.ALOAuth
+import eu.kanade.tachiyomi.data.track.anilist.dto.ALSearchItem
 import eu.kanade.tachiyomi.data.track.anilist.dto.ALSearchResult
 import eu.kanade.tachiyomi.data.track.anilist.dto.ALUserListMangaQueryResult
 import eu.kanade.tachiyomi.data.track.model.TrackMangaMetadata
@@ -31,6 +43,9 @@ import okhttp3.Response
 import tachiyomi.core.common.util.lang.withIOContext
 import uy.kohesive.injekt.injectLazy
 import java.time.Instant
+// KMK -->
+import java.time.Year
+// KMK <--
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import kotlin.time.Duration.Companion.minutes
@@ -483,6 +498,227 @@ class AnilistApi(val client: OkHttpClient, interceptor: AnilistInterceptor) {
         }
     }
     // SY <--
+
+    // KMK -->
+    private suspend fun getMediaPage(query: String, variables: JsonObject): List<ALSearchItem> {
+        val payload = buildJsonObject {
+            put("query", query)
+            put("variables", variables)
+        }
+        return with(json) {
+            client.newCall(POST(API_URL, body = payload.toString().toRequestBody(jsonMime)))
+                .awaitSuccess()
+                .also { it.parseALError() }
+                .parseAs<ALHomeMediaPageResult>()
+                .data.page.media
+        }
+    }
+
+    /** Trending manga right now, no authentication required. */
+    suspend fun getTrending(page: Int = 1, perPage: Int = 20): List<ALSearchItem> {
+        return withIOContext {
+            val query = $$"""
+            |query ($page: Int, $perPage: Int) {
+                |Page (page: $page, perPage: $perPage) {
+                    |media(type: MANGA, format_not_in: [NOVEL], sort: TRENDING_DESC) {
+                        |id
+                        |title { userPreferred }
+                        |coverImage { large }
+                        |description
+                        |format
+                        |status
+                        |startDate { year month day }
+                        |chapters
+                        |averageScore
+                        |staff { edges { role id node { name { full userPreferred native } } } }
+                    |}
+                |}
+            |}
+            |
+            """.trimMargin()
+            val variables = buildJsonObject {
+                put("page", page)
+                put("perPage", perPage)
+            }
+            getMediaPage(query, variables)
+        }
+    }
+
+    /** All-time most popular manga, no authentication required. */
+    suspend fun getAllTimePopular(page: Int = 1, perPage: Int = 20): List<ALSearchItem> {
+        return withIOContext {
+            val query = $$"""
+            |query ($page: Int, $perPage: Int) {
+                |Page (page: $page, perPage: $perPage) {
+                    |media(type: MANGA, format_not_in: [NOVEL], sort: POPULARITY_DESC) {
+                        |id
+                        |title { userPreferred }
+                        |coverImage { large }
+                        |description
+                        |format
+                        |status
+                        |startDate { year month day }
+                        |chapters
+                        |averageScore
+                        |staff { edges { role id node { name { full userPreferred native } } } }
+                    |}
+                |}
+            |}
+            |
+            """.trimMargin()
+            val variables = buildJsonObject {
+                put("page", page)
+                put("perPage", perPage)
+            }
+            getMediaPage(query, variables)
+        }
+    }
+
+    /**
+     * Most popular manga published this year, no authentication required. AniList's
+     * season/seasonYear filters don't apply meaningfully to manga (they're anime-only), so this
+     * is the manga-safe analog of a "this season" row.
+     */
+    suspend fun getPopularThisYear(page: Int = 1, perPage: Int = 20): List<ALSearchItem> {
+        return withIOContext {
+            val query = $$"""
+            |query ($page: Int, $perPage: Int, $yearStart: FuzzyDateInt) {
+                |Page (page: $page, perPage: $perPage) {
+                    |media(type: MANGA, format_not_in: [NOVEL], sort: POPULARITY_DESC, startDate_greater: $yearStart) {
+                        |id
+                        |title { userPreferred }
+                        |coverImage { large }
+                        |description
+                        |format
+                        |status
+                        |startDate { year month day }
+                        |chapters
+                        |averageScore
+                        |staff { edges { role id node { name { full userPreferred native } } } }
+                    |}
+                |}
+            |}
+            |
+            """.trimMargin()
+            val variables = buildJsonObject {
+                put("page", page)
+                put("perPage", perPage)
+                put("yearStart", Year.now().value * 10000 + 101)
+            }
+            getMediaPage(query, variables)
+        }
+    }
+
+    /** The logged-in user's currently-reading list, sorted by most recently updated. */
+    suspend fun getContinueReading(userId: Int, page: Int = 1, perPage: Int = 25): List<ALContinueReadingEntry> {
+        return withIOContext {
+            val query = $$"""
+            |query ($userId: Int, $page: Int, $perPage: Int) {
+                |Page (page: $page, perPage: $perPage) {
+                    |mediaList(userId: $userId, type: MANGA, status: CURRENT, sort: UPDATED_TIME_DESC) {
+                        |progress
+                        |media {
+                            |id
+                            |title { userPreferred }
+                            |coverImage { large }
+                            |description
+                            |format
+                            |status
+                            |startDate { year month day }
+                            |chapters
+                            |averageScore
+                            |staff { edges { role id node { name { full userPreferred native } } } }
+                        |}
+                    |}
+                |}
+            |}
+            |
+            """.trimMargin()
+            val payload = buildJsonObject {
+                put("query", query)
+                putJsonObject("variables") {
+                    put("userId", userId)
+                    put("page", page)
+                    put("perPage", perPage)
+                }
+            }
+            with(json) {
+                authClient.newCall(POST(API_URL, body = payload.toString().toRequestBody(jsonMime)))
+                    .awaitSuccess()
+                    .also { it.parseALError() }
+                    .parseAs<ALContinueReadingResult>()
+                    .data.page.mediaList
+            }
+        }
+    }
+
+    /**
+     * Rich metadata for a single manga by its raw AniList media id, for the Discover detail
+     * screen. Deliberately uses the unauthenticated [client] (unlike [searchById], which fetches
+     * a similar but leaner shape) so a logged-out user can still open a card's detail page.
+     */
+    suspend fun getMediaDetail(id: Long): ALMediaDetailMedia {
+        return withIOContext {
+            val query = $$"""
+            |query ($mangaId: Int!) {
+                |Media (id: $mangaId, type: MANGA) {
+                    |id
+                    |title { userPreferred }
+                    |coverImage { large }
+                    |bannerImage
+                    |description
+                    |genres
+                    |averageScore
+                    |status
+                    |format
+                    |chapters
+                    |staff {
+                        |edges {
+                            |role
+                            |id
+                            |node { name { full userPreferred native } }
+                        |}
+                    |}
+                    |characters(sort: [ROLE, RELEVANCE], perPage: 12) {
+                        |edges {
+                            |role
+                            |node {
+                                |name { full userPreferred native }
+                                |image { large }
+                            |}
+                        |}
+                    |}
+                    |relations {
+                        |edges {
+                            |relationType
+                            |node {
+                                |id
+                                |title { userPreferred }
+                                |coverImage { large }
+                                |type
+                            |}
+                        |}
+                    |}
+                |}
+            |}
+            |
+            """.trimMargin()
+            val payload = buildJsonObject {
+                put("query", query)
+                putJsonObject("variables") {
+                    put("mangaId", id)
+                }
+            }
+            with(json) {
+                client.newCall(POST(API_URL, body = payload.toString().toRequestBody(jsonMime)))
+                    .awaitSuccess()
+                    .also { it.parseALError() }
+                    .parseAs<ALMediaDetailResult>()
+                    .data.media
+            }
+        }
+    }
+    // KMK <--
 
     private fun createDate(dateValue: Long): JsonObject {
         if (dateValue == 0L) {

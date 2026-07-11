@@ -39,7 +39,11 @@ class Anilist(id: Long) : BaseTracker(id, "AniList"), DeletableTracker {
 
     private val interceptor by lazy { AnilistInterceptor(this, getPassword()) }
 
-    private val api by lazy { AnilistApi(client, interceptor) }
+    // KMK -->
+    // Exposed (was private) so the Discover home tab can reuse this tracker's rate-limited,
+    // auth-aware AnilistApi instance instead of constructing a second one.
+    val api by lazy { AnilistApi(client, interceptor) }
+    // KMK <--
 
     override val supportsReadingDates: Boolean = true
 
